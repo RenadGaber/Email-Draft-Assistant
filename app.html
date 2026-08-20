@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Draftline — Email Draft Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c0c;
+    --box:#111111;
+    --hairline:rgba(255,255,255,0.08);
+    --heading:#fafafa;
+    --subtitle:#9e9e9e;
+    --placeholder:#7c7c7c;
+    --grad-solid: linear-gradient(90deg, #ffe776 0%, #ffd400 22%, #ffd000 40%, #c9c93c 60%, #86ca8a 76%, #78d0cd 100%);
+  }
+  *{box-sizing:border-box;}
+  html{font-size:16px; -webkit-font-smoothing:antialiased;}
+  body{margin:0; min-height:100dvh; background:var(--bg); color:#fff; font-family:"Inter","Helvetica Neue",Arial,system-ui,sans-serif;}
+  a{color:inherit; text-decoration:none;}
+  button, textarea, select{font-family:inherit;}
+
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:1.1rem clamp(16px,3vw,32px);}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:600; font-size:1rem; color:#fafafa;}
+  .brand svg{width:26px; height:26px;}
+  .back-link{color:#9e9e9e; font-size:0.9rem; transition:color .15s ease;}
+  .back-link:hover{color:#f2f2f2;}
+
+  main{max-width:920px; margin:0 auto; padding:1.5rem clamp(16px,3vw,32px) 4rem;}
+  .page-head{text-align:center; margin-bottom:2rem;}
+  .page-head h1{font-weight:500; font-size:clamp(1.6rem,3.4vw,2.2rem); letter-spacing:-0.02em; margin:0 0 0.6rem; color:var(--heading);}
+  .page-head p{color:var(--subtitle); font-size:0.95rem; margin:0;}
+
+  .layout{display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; align-items:start;}
+  @media (max-width:820px){ .layout{grid-template-columns:1fr;} }
+
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0) 40%), var(--box); border:1px solid var(--hairline); border-radius:16px; padding:1.4rem;}
+
+  .field{margin-bottom:1.1rem;}
+  .field:last-child{margin-bottom:0;}
+  label{display:block; font-size:0.8rem; font-weight:600; color:#cfcfcf; margin-bottom:0.5rem; letter-spacing:0.01em;}
+
+  .type-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:0.6rem;}
+  .type-option{position:relative;}
+  .type-option input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .type-option span{display:block; border:1px solid var(--hairline); border-radius:10px; padding:0.65rem 0.7rem; font-size:0.85rem; color:#d6d6d6; text-align:center; transition:border-color .15s ease, background .15s ease, color .15s ease;}
+  .type-option input:checked + span{border-color:transparent; background:var(--grad-solid); color:#0c0c0c; font-weight:600;}
+  .type-option input:focus-visible + span{outline:2px solid #fff; outline-offset:2px;}
+
+  textarea{width:100%; min-height:150px; resize:vertical; background:#161616; border:1px solid var(--hairline); border-radius:10px; color:#f2f2f2; padding:0.8rem 0.9rem; font-size:0.9rem; line-height:1.5;}
+  textarea::placeholder{color:var(--placeholder);}
+  textarea:focus{outline:none; border-color:#78d0cd;}
+
+  .lang-row{display:flex; gap:0.6rem;}
+  .lang-row .type-option span{padding:0.55rem 0.7rem;}
+
+  .generate-btn{position:relative; width:100%; margin-top:1.2rem; border:none; border-radius:999px; padding:0.85em 1.2em; font-size:0.95rem; font-weight:600; color:#0c0c0c; background:var(--grad-solid); display:flex; align-items:center; justify-content:center; gap:8px; transition:filter .15s ease, transform .1s ease;}
+  .generate-btn:hover{filter:brightness(1.06);}
+  .generate-btn:active{transform:scale(.99);}
+  .generate-btn:disabled{opacity:0.6; cursor:not-allowed;}
+  .spinner{width:16px; height:16px; border-radius:50%; border:2px solid rgba(12,12,12,0.3); border-top-color:#0c0c0c; animation:spin 0.7s linear infinite; display:none;}
+  .generate-btn.loading .spinner{display:inline-block;}
+  .generate-btn.loading .btn-label{display:none;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .output-card{min-height:280px; display:flex; flex-direction:column;}
+  .output-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:0.9rem;}
+  .output-head h2{font-size:0.85rem; font-weight:600; color:#cfcfcf; margin:0; letter-spacing:0.02em; text-transform:uppercase;}
+  .copy-btn{background:none; border:1px solid var(--hairline); border-radius:8px; padding:0.35em 0.8em; font-size:0.78rem; color:#cfcfcf; display:flex; align-items:center; gap:6px; transition:border-color .15s ease, color .15s ease;}
+  .copy-btn:hover{border-color:#78d0cd; color:#fff;}
+  .copy-btn svg{width:13px; height:13px;}
+
+  .output-body{flex:1; white-space:pre-wrap; font-size:0.9rem; line-height:1.65; color:#e8e8e8;}
+  .output-empty{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:#6b6b6b; gap:0.7rem;}
+  .output-empty svg{width:32px; height:32px; opacity:0.5;}
+  .output-empty p{margin:0; font-size:0.85rem; max-width:20rem;}
+
+  .error-box{background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.25); color:#ff9d9d; border-radius:10px; padding:0.7rem 0.9rem; font-size:0.85rem; margin-top:1rem; display:none;}
+  .error-box.show{display:block;}
+
+  .footnote{text-align:center; color:#6b6b6b; font-size:0.78rem; margin-top:1.6rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="landing.html">
+    <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="24" stroke="#78d0cd" stroke-width="2"/><circle cx="26" cy="26" r="7.4" fill="#fbfbfb"/></svg>
+    Draftline
+  </a>
+  <a class="back-link" href="landing.html">← Back to overview</a>
+</div>
+
+<main>
+  <div class="page-head">
+    <h1>Turn your notes into a ready email</h1>
+    <p>Pick the type, list your points, and let the assistant do the writing.</p>
+  </div>
+
+  <div class="layout">
+    <form class="card" id="emailForm">
+      <div class="field">
+        <label>Email type</label>
+        <div class="type-grid" id="typeGrid">
+          <label class="type-option"><input type="radio" name="emailType" value="quote" checked><span>Quote</span></label>
+          <label class="type-option"><input type="radio" name="emailType" value="follow-up"><span>Follow-up</span></label>
+          <label class="type-option"><input type="radio" name="emailType" value="apology"><span>Apology</span></label>
+          <label class="type-option"><input type="radio" name="emailType" value="complaint_response"><span>Complaint reply</span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Your points</label>
+        <textarea id="pointsInput" placeholder="e.g.&#10;- customer Ahmed, wants quote for 50 licenses&#10;- $200/license per year&#10;- 15% off if paid upfront&#10;- offer valid 2 weeks" required></textarea>
+      </div>
+
+      <div class="field">
+        <label>Language</label>
+        <div class="lang-row">
+          <label class="type-option"><input type="radio" name="lang" value="auto" checked><span>Auto-detect</span></label>
+          <label class="type-option"><input type="radio" name="lang" value="Arabic"><span>Arabic</span></label>
+          <label class="type-option"><input type="radio" name="lang" value="English"><span>English</span></label>
+        </div>
+      </div>
+
+      <button type="submit" class="generate-btn" id="generateBtn">
+        <span class="spinner"></span>
+        <span class="btn-label">Generate email</span>
+      </button>
+      <div class="error-box" id="errorBox"></div>
+    </form>
+
+    <div class="card output-card">
+      <div class="output-head">
+        <h2>Generated email</h2>
+        <button type="button" class="copy-btn" id="copyBtn" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <div class="output-empty" id="outputEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4z"/><path d="M4 4l8 8 8-8"/></svg>
+        <p>Your generated email will show up here once you fill in the points and hit generate.</p>
+      </div>
+      <div class="output-body" id="outputBody" style="display:none;"></div>
+    </div>
+  </div>
+
+  <p class="footnote">Connects to your FastAPI backend at <code>http://localhost:8000/generate-email</code></p>
+</main>
+
+<script>
+const API_URL = "http://localhost:8000/generate-email";
+
+const form = document.getElementById('emailForm');
+const generateBtn = document.getElementById('generateBtn');
+const errorBox = document.getElementById('errorBox');
+const outputEmpty = document.getElementById('outputEmpty');
+const outputBody = document.getElementById('outputBody');
+const copyBtn = document.getElementById('copyBtn');
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  errorBox.classList.remove('show');
+  errorBox.textContent = '';
+
+  const emailType = form.querySelector('input[name="emailType"]:checked').value;
+  const lang = form.querySelector('input[name="lang"]:checked').value;
+  const points = document.getElementById('pointsInput').value.trim();
+
+  if(!points){
+    errorBox.textContent = 'Add a few points about the email first.';
+    errorBox.classList.add('show');
+    return;
+  }
+
+  generateBtn.classList.add('loading');
+  generateBtn.disabled = true;
+
+  try{
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        email_type: emailType,
+        points: lang === 'auto' ? points : `[Write in ${lang}]\n${points}`
+      })
+    });
+
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.detail || `Request failed (${res.status})`);
+    }
+
+    const data = await res.json();
+    outputBody.textContent = data.email;
+    outputBody.style.display = 'block';
+    outputEmpty.style.display = 'none';
+    copyBtn.style.display = 'flex';
+  }catch(err){
+    errorBox.textContent = err.message.includes('fetch')
+      ? 'Could not reach the backend. Make sure it is running at localhost:8000.'
+      : err.message;
+    errorBox.classList.add('show');
+  }finally{
+    generateBtn.classList.remove('loading');
+    generateBtn.disabled = false;
+  }
+});
+
+copyBtn.addEventListener('click', ()=>{
+  navigator.clipboard.writeText(outputBody.textContent).then(()=>{
+    const original = copyBtn.innerHTML;
+    copyBtn.innerHTML = 'Copied ✓';
+    setTimeout(()=>{ copyBtn.innerHTML = original; }, 1500);
+  });
+});
+</script>
+</body>
+</html>
